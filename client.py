@@ -12,10 +12,10 @@ import numpy as np
 import sounddevice as sd
 import soundfile as sf
 import websockets
- 
+
 SAMPLE_RATE = 16000
 CHUNK_SAMPLES = 512  # matches the server's VAD window size
-SERVER_URL = "ws://localhost:8765"
+SERVER_URL = "ws://localhost:8000/ws"
 
 
 async def mic_sender(ws):
@@ -24,7 +24,7 @@ async def mic_sender(ws):
 
     def callback(indata, frames, time_info, status):
         pcm16 = (indata[:, 0] * 32767).astype(np.int16).tobytes()
-        loop.call_soon_threadsafe(q.put_nowait, pcm16) #drops that chunk of bytes into a queue — safely
+        loop.call_soon_threadsafe(q.put_nowait, pcm16)
 
     stream = sd.InputStream(
         samplerate=SAMPLE_RATE, channels=1, dtype="float32",

@@ -1,0 +1,46 @@
+# UNVERIFIED IN THIS BUILD -- no Docker daemon in the dev sandbox. Run
+# `docker compose up` locally and check the n8n workflow import before
+# relying on this for anything, including a live demo.
+
+services:
+  voice-agent:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+    volumes:
+      - ./logs:/app/logs
+    restart: unless-stopped
+
+  n8n:
+    image: n8nio/n8n:latest
+    ports:
+      - "5678:5678"
+    environment:
+      - N8N_SECURE_COOKIE=false
+    volumes:
+      - n8n_data:/home/node/.n8n
+    depends_on:
+      - voice-agent
+    restart: unless-stopped
+
+volumes:
+  n8n_data:
+
+# Grafana is deliberately NOT included by default. It cannot read SQLite
+# natively -- it needs the community `frser-sqlite-datasource` plugin,
+# loaded unsigned, which is a real reliability risk I can't verify here
+# (no Docker). The built-in /dashboard page (served by voice-agent) covers
+# the same metrics without that dependency. Uncomment this only after
+# testing it locally:
+#
+#  grafana:
+#    image: grafana/grafana:latest
+#    ports:
+#      - "3000:3000"
+#    environment:
+#      - GF_INSTALL_PLUGINS=frser-sqlite-datasource
+#      - GF_PLUGINS_ALLOW_LOADING_UNSIGNED_PLUGINS=frser-sqlite-datasource
+#    volumes:
+#      - ./logs:/data   # calls.db must be mounted here for the plugin to read it

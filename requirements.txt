@@ -8,3 +8,5 @@ faster-whisper
 google-generativeai
 pyttsx3
 python-dotenv
+fastapi
+uvicorn[standard]

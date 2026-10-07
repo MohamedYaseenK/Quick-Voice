@@ -1,0 +1,73 @@
+{
+  "name": "Voice Agent - Flagged Call Triage",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": { "interval": [{ "field": "seconds", "secondsInterval": 60 }] }
+      },
+      "name": "Every 60s",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "url": "http://voice-agent:8000/calls/flagged",
+        "options": {}
+      },
+      "name": "Get Flagged Calls",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "call_id",
+        "options": {}
+      },
+      "name": "One Call Per Item",
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=http://voice-agent:8000/triage/{{$json.call_id}}",
+        "options": {}
+      },
+      "name": "Run Triage",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [900, 300]
+    },
+    {
+      "parameters": {
+        "mode": "manual",
+        "assignments": {
+          "assignments": [
+            {
+              "name": "summary_log",
+              "value": "=Call {{$json.call_id}} flagged (threshold {{$json.threshold_ms}}ms): {{$json.summary}}",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "name": "Log Summary (swap for Slack node)",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [1120, 300],
+      "notes": "No Slack webhook was available when this was built -- this just logs the triage summary as an n8n execution output. Replace with a Slack/Email node pointed at your own credential; the upstream data (call_id, threshold_ms, summary) is already shaped for it."
+    }
+  ],
+  "connections": {
+    "Every 60s": { "main": [[{ "node": "Get Flagged Calls", "type": "main", "index": 0 }]] },
+    "Get Flagged Calls": { "main": [[{ "node": "One Call Per Item", "type": "main", "index": 0 }]] },
+    "One Call Per Item": { "main": [[{ "node": "Run Triage", "type": "main", "index": 0 }]] },
+    "Run Triage": { "main": [[{ "node": "Log Summary (swap for Slack node)", "type": "main", "index": 0 }]] }
+  },
+  "active": false,
+  "settings": {},
+  "_NOTE_UNVERIFIED": "This JSON was hand-written against n8n's documented node/schema shape and could NOT be imported into a running n8n instance in this sandbox (no n8n available, no Docker to run it). Import this into n8n locally and check every node's connection and parameter names before trusting it -- n8n's node schema has changed across versions before."
+}

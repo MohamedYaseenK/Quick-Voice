@@ -1,0 +1,13 @@
+# Server-only deps for the Docker image. Deliberately excludes
+# sounddevice/soundfile -- those are only used by client.py (mic capture /
+# local playback), which never runs inside this container, and sounddevice
+# needs the libportaudio system library the server doesn't otherwise need.
+numpy
+silero-vad
+torch
+faster-whisper
+google-generativeai
+pyttsx3
+python-dotenv
+fastapi
+uvicorn[standard]
